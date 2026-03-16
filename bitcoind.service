@@ -7,7 +7,14 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-ExecStart=/usr/local/bin/bitcoind -conf=/etc/bitcoin/bitcoin.conf
+ExecStart=/usr/local/bin/bitcoind -pid=/run/bitcoind/bitcoind.pid \
+                                  -conf=/etc/bitcoin/bitcoin.conf \
+                                  -datadir=/var/lib/bitcoind \
+                                  -startupnotify='systemd-notify --ready' \
+                                  -shutdownnotify='systemd-notify --stopping'
+
+# Make sure the config directory is readable by the service user
+ExecStartPre=!/bin/chgrp bitcoin /etc/bitcoin
 
 # Process management
 ####################
@@ -25,7 +32,6 @@ TimeoutStopSec=600
 
 # Run as bitcoin:bitcoin
 User=bitcoin
-Group=bitcoin
 
 # /run/bitcoind
 RuntimeDirectory=bitcoind
@@ -64,6 +70,40 @@ MemoryDenyWriteExecute=true
 
 # Restrict ABIs to help ensure MemoryDenyWriteExecute is enforced
 SystemCallArchitectures=native
+
+# Deny access to kernel variables through /proc/sys, /sys, etc.
+ProtectKernelTunables=true
+
+# Deny module loading
+ProtectKernelModules=true
+
+# Deny access to the kernel log ring buffer
+ProtectKernelLogs=true
+
+# Deny write access to cgroups
+ProtectControlGroups=true
+
+# Deny changing the process hostname or domain name
+ProtectHostname=true
+
+# Deny real-time clock access
+ProtectClock=true
+
+# Set all personality types as inaccessible
+LockPersonality=true
+
+# Deny namespace creation
+RestrictNamespaces=true
+
+# Deny SUID/SGID file creation
+RestrictSUIDSGID=true
+
+# Deny access to AF_PACKET for raw network traffic capture
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+# Set syscall filter to allowlist (network & file I/O related calls)
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
 
 [Install]
 WantedBy=multi-user.target

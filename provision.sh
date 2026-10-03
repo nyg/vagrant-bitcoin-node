@@ -8,7 +8,7 @@ sudo apt-get install -y curl tar gnupg git ufw
 
 SOURCE_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-ARCH=x86_64
+ARCH=aarch64
 PLATFORM=linux-gnu
 BITCOIN_VERSION=$(curl -s https://bitcoincore.org/en/download/ | grep -oP '(?<=Latest version: )[0-9.]+(?= )')
 

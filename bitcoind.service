@@ -11,7 +11,7 @@ ExecStart=/usr/local/bin/bitcoind -pid=/run/bitcoind/bitcoind.pid \
                                   -conf=/etc/bitcoin/bitcoin.conf \
                                   -datadir=/var/lib/bitcoind \
                                   -startupnotify='systemd-notify --ready' \
-                                  -shutdownnotify='systemd-notify --stopping'
+                                  -shutdownnotify='systemd-notify STOPPING=1'
 
 # Make sure the config directory is readable by the service user
 # "+" not "!": SystemCallFilter below denies @chown

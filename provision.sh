@@ -6,6 +6,8 @@ set -euo pipefail
 sudo apt-get update
 sudo apt-get install -y curl tar gnupg git ufw
 
+SOURCE_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+
 ARCH=x86_64
 PLATFORM=linux-gnu
 BITCOIN_VERSION=$(curl -s https://bitcoincore.org/en/download/ | grep -oP '(?<=Latest version: )[0-9.]+(?= )')
@@ -47,11 +49,11 @@ sudo install -m 0755 -o root -g root "bitcoin-${BITCOIN_VERSION}"/bin/bitcoin* /
 id -u bitcoin >/dev/null 2>&1 || sudo useradd -r -M -U -s /usr/sbin/nologin -c "Bitcoin node user" bitcoin
 
 # Copy bitcoind.service
-sudo install -m 0644 /vagrant/bitcoind.service /etc/systemd/system/bitcoind.service
+sudo install -m 0644 "${SOURCE_DIR}/bitcoind.service" /etc/systemd/system/bitcoind.service
 
 # Copy bitcoin.conf with restrictive permissions
 sudo install -d -m 0710 -o root -g bitcoin /etc/bitcoin
-sudo install -m 0640 -o root -g bitcoin /vagrant/bitcoin.conf /etc/bitcoin/bitcoin.conf
+sudo install -m 0640 -o root -g bitcoin "${SOURCE_DIR}/bitcoin.conf" /etc/bitcoin/bitcoin.conf
 
 sudo ufw default deny incoming
 sudo ufw default allow outgoing

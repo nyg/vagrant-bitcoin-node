@@ -14,7 +14,8 @@ ExecStart=/usr/local/bin/bitcoind -pid=/run/bitcoind/bitcoind.pid \
                                   -shutdownnotify='systemd-notify --stopping'
 
 # Make sure the config directory is readable by the service user
-ExecStartPre=!/bin/chgrp bitcoin /etc/bitcoin
+# "+" not "!": SystemCallFilter below denies @chown
+ExecStartPre=+/bin/chgrp bitcoin /etc/bitcoin
 
 # Process management
 ####################
@@ -46,6 +47,9 @@ ConfigurationDirectoryMode=0710
 StateDirectory=bitcoind
 StateDirectoryMode=0710
 
+LogsDirectory=bitcoin
+LogsDirectoryMode=0750
+
 # Hardening measures
 ####################
 
@@ -72,39 +76,23 @@ MemoryDenyWriteExecute=true
 # Restrict ABIs to help ensure MemoryDenyWriteExecute is enforced
 SystemCallArchitectures=native
 
-# Deny access to kernel variables through /proc/sys, /sys, etc.
 ProtectKernelTunables=true
-
-# Deny module loading
 ProtectKernelModules=true
-
-# Deny access to the kernel log ring buffer
 ProtectKernelLogs=true
-
-# Deny write access to cgroups
 ProtectControlGroups=true
-
-# Deny changing the process hostname or domain name
 ProtectHostname=true
-
-# Deny real-time clock access
 ProtectClock=true
-
-# Set all personality types as inaccessible
 LockPersonality=true
-
-# Deny namespace creation
 RestrictNamespaces=true
-
-# Deny SUID/SGID file creation
 RestrictSUIDSGID=true
 
-# Deny access to AF_PACKET for raw network traffic capture
-RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+# AF_NETLINK: getifaddrs() and the PCP/NAT-PMP gateway lookup
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
 
-# Set syscall filter to allowlist (network & file I/O related calls)
 SystemCallFilter=@system-service
 SystemCallFilter=~@privileged @resources
+# bitcoind requests SCHED_BATCH for its import thread: refuse it instead of SIGSYS
+SystemCallErrorNumber=EPERM
 
 [Install]
 WantedBy=multi-user.target

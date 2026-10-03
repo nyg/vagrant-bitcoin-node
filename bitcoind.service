@@ -7,7 +7,15 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-ExecStart=/usr/local/bin/bitcoind -conf=/etc/bitcoin/bitcoin.conf
+ExecStart=/usr/local/bin/bitcoind -pid=/run/bitcoind/bitcoind.pid \
+                                  -conf=/etc/bitcoin/bitcoin.conf \
+                                  -datadir=/var/lib/bitcoind \
+                                  -startupnotify='systemd-notify --ready' \
+                                  -shutdownnotify='systemd-notify STOPPING=1'
+
+# Make sure the config directory is readable by the service user
+# "+" not "!": SystemCallFilter below denies @chown
+ExecStartPre=+/bin/chgrp bitcoin /etc/bitcoin
 
 # Process management
 ####################
@@ -39,6 +47,9 @@ ConfigurationDirectoryMode=0710
 StateDirectory=bitcoind
 StateDirectoryMode=0710
 
+LogsDirectory=bitcoin
+LogsDirectoryMode=0750
+
 # Hardening measures
 ####################
 
@@ -64,6 +75,24 @@ MemoryDenyWriteExecute=true
 
 # Restrict ABIs to help ensure MemoryDenyWriteExecute is enforced
 SystemCallArchitectures=native
+
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectHostname=true
+ProtectClock=true
+LockPersonality=true
+RestrictNamespaces=true
+RestrictSUIDSGID=true
+
+# AF_NETLINK: getifaddrs() and the PCP/NAT-PMP gateway lookup
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+# bitcoind requests SCHED_BATCH for its import thread: refuse it instead of SIGSYS
+SystemCallErrorNumber=EPERM
 
 [Install]
 WantedBy=multi-user.target
